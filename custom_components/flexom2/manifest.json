@@ -1,0 +1,12 @@
+{
+  "domain": "flexom2",
+  "name": "Flexom 2.0 (Ubiant)",
+  "version": "0.1.0",
+  "documentation": "https://github.com/arthur/home-assistant-flexom2",
+  "issue_tracker": "https://github.com/arthur/home-assistant-flexom2/issues",
+  "codeowners": ["@arthur"],
+  "config_flow": true,
+  "iot_class": "cloud_polling",
+  "integration_type": "hub",
+  "requirements": []
+}

@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connexion à Flexom 2.0",
+        "description": "Utilise tes identifiants de l'app mobile Flexom 2.0.",
+        "data": {
+          "email": "Email",
+          "password": "Mot de passe"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Identifiants invalides",
+      "cannot_connect": "Impossible de joindre le serveur Flexom",
+      "unknown": "Erreur inattendue, voir les logs"
+    },
+    "abort": {
+      "already_configured": "Ce compte Flexom est déjà configuré"
+    }
+  },
+  "entity": {
+    "light": {
+      "zone_light": {
+        "name": "Lumière"
+      }
+    },
+    "cover": {
+      "zone_cover": {
+        "name": "Volet"
+      }
+    },
+    "climate": {
+      "zone_climate": {
+        "name": "Chauffage"
+      }
+    }
+  }
+}
