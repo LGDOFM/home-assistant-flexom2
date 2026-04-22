@@ -77,46 +77,53 @@ class StompClient:
         try:
             self._ws = await self._session.ws_connect(
                 self._ws_url,
-                protocols=("v12.stomp", "v11.stomp"),
-                heartbeat=self.HEARTBEAT_MS / 1000.0,
+                protocols=("v12.stomp", "v11.stomp", "v10.stomp"),
             )
         except aiohttp.ClientError as e:
             await self._session.close()
             self._session = None
             raise FlexomNetworkError(f"STOMP ws_connect failed: {e}") from e
 
-        host = urlparse(self._ws_url).hostname or "localhost"
-        await self._ws.send_str(
-            _encode_frame(
-                "CONNECT",
-                {
-                    "accept-version": "1.2",
-                    "host": host,
-                    "login": self._building_id,
-                    "passcode": self._token,
-                    "heart-beat": f"{self.HEARTBEAT_MS},{self.HEARTBEAT_MS}",
-                },
-            )
-        )
+        selected = getattr(self._ws, "protocol", None)
+        _log.info("STOMP WS open, negotiated subprotocol=%s", selected)
 
+        # Reader FIRST so we don't miss a fast CONNECTED arriving before we await.
         self._reader_task = asyncio.create_task(self._reader_loop(), name="stomp-reader")
 
-        try:
-            await asyncio.wait_for(self._connected.wait(), timeout=10.0)
-        except TimeoutError as e:
-            await self.disconnect()
-            raise FlexomNetworkError("STOMP CONNECTED frame timeout") from e
-
-        await self._ws.send_str(
-            _encode_frame(
-                "SUBSCRIBE",
-                {
-                    "id": "sub-1",
-                    "destination": f"jms.topic.{self._building_id}.data",
-                    "ack": "auto",
-                },
-            )
+        host = urlparse(self._ws_url).hostname or "localhost"
+        connect_frame = _encode_frame(
+            "CONNECT",
+            {
+                "accept-version": "1.2,1.1,1.0",
+                "host": host,
+                "login": self._building_id,
+                "passcode": self._token,
+                "heart-beat": f"{self.HEARTBEAT_MS},{self.HEARTBEAT_MS}",
+            },
         )
+        _log.debug("STOMP >> %r", connect_frame)
+        await self._ws.send_str(connect_frame)
+
+        try:
+            await asyncio.wait_for(self._connected.wait(), timeout=20.0)
+        except TimeoutError as e:
+            close_code = getattr(self._ws, "close_code", None)
+            exc = self._ws.exception() if self._ws else None
+            await self.disconnect()
+            raise FlexomNetworkError(
+                f"STOMP CONNECTED frame timeout (ws close_code={close_code} exc={exc})"
+            ) from e
+
+        sub_frame = _encode_frame(
+            "SUBSCRIBE",
+            {
+                "id": "sub-1",
+                "destination": f"jms.topic.{self._building_id}.data",
+                "ack": "auto",
+            },
+        )
+        _log.debug("STOMP >> %r", sub_frame)
+        await self._ws.send_str(sub_frame)
         _log.info("STOMP subscribed to jms.topic.%s.data", self._building_id)
 
     async def disconnect(self) -> None:
@@ -144,9 +151,30 @@ class StompClient:
         try:
             async for msg in self._ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:
+                    _log.debug("STOMP << TEXT %r", msg.data[:500])
                     await self._handle_raw(msg.data)
+                elif msg.type == aiohttp.WSMsgType.BINARY:
+                    # Some STOMP servers send binary frames
+                    try:
+                        decoded = msg.data.decode("utf-8")
+                    except UnicodeDecodeError:
+                        _log.warning("STOMP non-UTF-8 binary: %r", msg.data[:80])
+                        continue
+                    _log.debug("STOMP << BIN %r", decoded[:500])
+                    await self._handle_raw(decoded)
+                elif msg.type == aiohttp.WSMsgType.PING:
+                    _log.debug("STOMP << PING")
+                elif msg.type == aiohttp.WSMsgType.PONG:
+                    _log.debug("STOMP << PONG")
                 elif msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
+                    _log.info(
+                        "STOMP << %s code=%s reason=%s",
+                        msg.type.name, getattr(self._ws, "close_code", None),
+                        msg.extra if hasattr(msg, "extra") else "",
+                    )
                     break
+                else:
+                    _log.debug("STOMP << (unhandled) type=%s", msg.type)
         except asyncio.CancelledError:
             pass
         except Exception as e:  # noqa: BLE001
