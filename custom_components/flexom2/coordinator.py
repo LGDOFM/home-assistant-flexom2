@@ -98,10 +98,22 @@ class FlexomCoordinator(DataUpdateCoordinator[FlexomData]):
     async def async_set_zone_factor(
         self, zone_id: str, factor: str, value: float
     ) -> None:
-        """Set a factor and trigger a coordinator refresh so entities update."""
+        """Set a factor and trigger progressive refresh.
+
+        Flexom backend takes a few seconds to reflect the new state in /settings
+        (it waits for the EnOcean actuator to ack). We do one quick refresh at
+        ~0.3s (catches fast actuators like light relays) and schedule a second
+        one at 3s (catches slow ones like shutter motors). WebSocket STOMP push
+        would make this unnecessary — see roadmap.
+        """
         if self._client is None:
             raise UpdateFailed("Client not connected")
         await self._client.set_zone_factor(zone_id, factor, value)
-        # Small grace period, shutters take a moment to start reporting
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.3)
         await self.async_request_refresh()
+
+        async def _delayed_refresh() -> None:
+            await asyncio.sleep(3.0)
+            await self.async_request_refresh()
+
+        self.hass.async_create_task(_delayed_refresh())

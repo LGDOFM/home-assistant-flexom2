@@ -40,6 +40,7 @@ class FlexomCover(FlexomZoneEntity, CoverEntity):
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
         | CoverEntityFeature.SET_POSITION
+        | CoverEntityFeature.STOP
     )
     _attr_translation_key = "zone_cover"
 
@@ -73,4 +74,14 @@ class FlexomCover(FlexomZoneEntity, CoverEntity):
         position = kwargs[ATTR_POSITION]
         await self.coordinator.async_set_zone_factor(
             self._zone_id, FACTOR_BRIEXT, position / 100.0
+        )
+
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        # Flexom has no documented STOP; re-send the current cached position
+        # so the target equals the current, which typically freezes the motor.
+        pos = self.current_cover_position
+        if pos is None:
+            return
+        await self.coordinator.async_set_zone_factor(
+            self._zone_id, FACTOR_BRIEXT, pos / 100.0
         )
