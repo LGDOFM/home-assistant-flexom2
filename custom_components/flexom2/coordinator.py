@@ -103,15 +103,30 @@ class FlexomCoordinator(DataUpdateCoordinator[FlexomData]):
     async def async_set_zone_factor(
         self, zone_id: str, factor: str, value: float
     ) -> None:
-        """Set a factor; STOMP will push the real state back within ~1s."""
+        """Set a factor. STOMP will push the real state back within ~1s.
+
+        No optimistic local update: it would lie about shutter position during
+        movement and break STOP semantics (click OPEN then STOP would freeze at
+        1.0 = re-open instead of current position).
+        """
         if self._client is None:
             raise UpdateFailed("Client not connected")
         await self._client.set_zone_factor(zone_id, factor, value)
-        # Optimistic: update local snapshot so the UI reflects intent immediately.
-        if self.data and (snap := self.data.zones.get(zone_id)):
-            if (s := snap.settings.get(factor)) is not None:
-                s.value = value
-                self.async_set_updated_data(self.data)
+
+    async def async_freeze_zone_factor(self, zone_id: str, factor: str) -> None:
+        """Fetch the factor's true live value and send it back as target.
+
+        Used for cover STOP: the actuator gets a new target == current position,
+        which in practice halts the motor. Bypasses cache to avoid freezing on
+        a stale/optimistic value.
+        """
+        if self._client is None:
+            raise UpdateFailed("Client not connected")
+        settings = await self._client.get_zone_settings(zone_id)
+        setting = settings.get(factor)
+        if setting is None:
+            return
+        await self._client.set_zone_factor(zone_id, factor, setting.value)
 
     # ----------------------- STOMP plumbing -----------------------
 

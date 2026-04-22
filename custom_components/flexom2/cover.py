@@ -77,11 +77,7 @@ class FlexomCover(FlexomZoneEntity, CoverEntity):
         )
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
-        # Flexom has no documented STOP; re-send the current cached position
-        # so the target equals the current, which typically freezes the motor.
-        pos = self.current_cover_position
-        if pos is None:
-            return
-        await self.coordinator.async_set_zone_factor(
-            self._zone_id, FACTOR_BRIEXT, pos / 100.0
-        )
+        # Flexom has no documented STOP. The coordinator fetches the live value
+        # via an extra API call before sending, to avoid stopping at a stale
+        # cached position (otherwise STOP after OPEN would re-open the shutter).
+        await self.coordinator.async_freeze_zone_factor(self._zone_id, FACTOR_BRIEXT)
