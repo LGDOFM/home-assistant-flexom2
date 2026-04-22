@@ -41,7 +41,6 @@ class FlexomClimate(FlexomZoneEntity, ClimateEntity):
 
     def __init__(self, coordinator: FlexomCoordinator, zone_id: str) -> None:
         super().__init__(coordinator, zone_id, FACTOR_TMP)
-        self._attr_name = "Chauffage"
 
     @property
     def target_temperature(self) -> float | None:

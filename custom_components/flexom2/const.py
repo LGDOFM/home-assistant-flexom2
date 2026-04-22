@@ -8,8 +8,8 @@ DOMAIN = "flexom2"
 CONF_EMAIL = "email"
 CONF_PASSWORD = "password"
 
-DEFAULT_SCAN_INTERVAL = timedelta(seconds=60)
-MIN_SCAN_INTERVAL = timedelta(seconds=30)
+DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
+MIN_SCAN_INTERVAL = timedelta(seconds=15)
 
 FACTOR_BRI = "BRI"
 FACTOR_BRIEXT = "BRIEXT"

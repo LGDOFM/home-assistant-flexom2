@@ -45,7 +45,6 @@ class FlexomCover(FlexomZoneEntity, CoverEntity):
 
     def __init__(self, coordinator: FlexomCoordinator, zone_id: str) -> None:
         super().__init__(coordinator, zone_id, FACTOR_BRIEXT)
-        self._attr_name = "Volet"
 
     @property
     def current_cover_position(self) -> int | None:

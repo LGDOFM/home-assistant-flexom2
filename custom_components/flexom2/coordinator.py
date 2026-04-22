@@ -73,16 +73,25 @@ class FlexomCoordinator(DataUpdateCoordinator[FlexomData]):
         if self._client is None or self._client.building is None:
             raise UpdateFailed("Client not connected")
 
-        data = FlexomData(building_id=self._client.building.buildingId)
-        for zone in self._zones_cache:
+        async def fetch_one(zone):
             if zone.id == MASTER_ZONE_ID:
-                # Skip the whole-building aggregate zone for entity creation
-                continue
+                return None
             try:
                 settings = await self._client.get_zone_settings(zone.id)
             except FlexomError as e:
                 _LOGGER.warning("Failed to fetch settings for zone %s: %s", zone.name, e)
+                return None
+            return zone, settings
+
+        results = await asyncio.gather(
+            *(fetch_one(z) for z in self._zones_cache),
+            return_exceptions=False,
+        )
+        data = FlexomData(building_id=self._client.building.buildingId)
+        for result in results:
+            if result is None:
                 continue
+            zone, settings = result
             data.zones[zone.id] = ZoneSnapshot(zone=zone, settings=settings)
         return data
 
