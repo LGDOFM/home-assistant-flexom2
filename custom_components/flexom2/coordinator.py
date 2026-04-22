@@ -114,18 +114,23 @@ class FlexomCoordinator(DataUpdateCoordinator[FlexomData]):
         await self._client.set_zone_factor(zone_id, factor, value)
 
     async def async_freeze_zone_factor(self, zone_id: str, factor: str) -> None:
-        """Fetch the factor's true live value and send it back as target.
+        """Send the last STOMP-reported value back as target to halt the motor.
 
-        Used for cover STOP: the actuator gets a new target == current position,
-        which in practice halts the motor. Bypasses cache to avoid freezing on
-        a stale/optimistic value.
+        Used for cover STOP. We use the STOMP-cached value (last event, <200ms lag)
+        rather than a fresh REST GET because REST returns the *in-motion* position
+        which shifts further during the network round-trip, causing a visible
+        flicker before the motor settles on its nearest discrete step.
         """
         if self._client is None:
             raise UpdateFailed("Client not connected")
-        settings = await self._client.get_zone_settings(zone_id)
-        setting = settings.get(factor)
+        snap = self.data.zones.get(zone_id) if self.data else None
+        setting = snap.settings.get(factor) if snap else None
         if setting is None:
-            return
+            # Fallback when the cache has nothing (first boot, race, ...)
+            settings = await self._client.get_zone_settings(zone_id)
+            setting = settings.get(factor)
+            if setting is None:
+                return
         await self._client.set_zone_factor(zone_id, factor, setting.value)
 
     # ----------------------- STOMP plumbing -----------------------
