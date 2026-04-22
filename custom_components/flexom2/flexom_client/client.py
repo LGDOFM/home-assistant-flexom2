@@ -61,6 +61,14 @@ class FlexomClient:
     def ubiant_user(self) -> UbiantUser | None:
         return self._ubiant_user
 
+    @property
+    def hemis_token(self) -> str | None:
+        return self._hemis.token if self._hemis is not None else None
+
+    async def ensure_auth(self) -> None:
+        """Public accessor to refresh tokens before reconnecting STOMP etc."""
+        await self._ensure_auth()
+
     async def _connect(self) -> None:
         assert self._ubiant is not None and self._session is not None
         self._ubiant_user = await self._ubiant.login(self._email, self._password)

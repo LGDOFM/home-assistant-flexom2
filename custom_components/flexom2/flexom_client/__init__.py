@@ -6,6 +6,7 @@ from .errors import (
     FlexomRateLimitError,
 )
 from .models import Building, HemisUser, Settings, Thing, UbiantUser, Zone
+from .ws import StompClient
 
 __all__ = [
     "Building",
@@ -16,6 +17,7 @@ __all__ = [
     "FlexomRateLimitError",
     "HemisUser",
     "Settings",
+    "StompClient",
     "Thing",
     "UbiantUser",
     "Zone",
