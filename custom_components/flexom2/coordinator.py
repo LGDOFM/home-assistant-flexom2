@@ -329,7 +329,9 @@ class FlexomCoordinator(DataUpdateCoordinator[FlexomData]):
         if snap is None:
             return
         changed = False
-        if factor in _CURRENT_STATE_IS_SETTING or event.get("type") == "ACTUATOR_HARDWARE_STATE":
+        # Only BRI/BRIEXT map 1:1 onto the zone setting. For TMP an actuator or
+        # current-state value is a measurement, never the setpoint.
+        if factor in _CURRENT_STATE_IS_SETTING:
             setting = snap.settings.get(factor)
             if setting is not None and setting.value != value:
                 _LOGGER.debug(
