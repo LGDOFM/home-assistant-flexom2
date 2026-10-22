@@ -51,6 +51,20 @@ class FlexomClimate(FlexomZoneEntity, ClimateEntity):
         return None if setting is None else setting.value
 
     @property
+    def current_temperature(self) -> float | None:
+        # Measured room temperature, pushed by Hemis as FACTOR_CURRENT_STATE/TMP
+        # (only for zones that actually hold a temperature sensor).
+        snap = self._snapshot
+        return None if snap is None else snap.current.get(FACTOR_TMP)
+
+    @property
+    def target_temperature_step(self) -> float:
+        snap = self._snapshot
+        if snap is not None and (s := snap.settings.get(FACTOR_TMP)) and s.step:
+            return s.step
+        return 0.5
+
+    @property
     def min_temp(self) -> float:
         snap = self._snapshot
         if snap is not None and (s := snap.settings.get(FACTOR_TMP)) and s.min is not None:

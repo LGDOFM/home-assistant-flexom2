@@ -7,24 +7,44 @@ import aiohttp
 
 from .errors import FlexomError
 from .hemis import HemisService
-from .models import Building, HemisUser, Settings, Thing, UbiantUser, Zone
+from .models import (
+    Actuator,
+    Building,
+    HemisInfos,
+    HemisStatus,
+    HemisUser,
+    Sensor,
+    Settings,
+    Thing,
+    UbiantUser,
+    Zone,
+)
 from .ubiant import UbiantService
 
 _log = logging.getLogger(__name__)
 
 
 class FlexomClient:
-    """Async façade orchestrating Ubiant (account/buildings) + Hemis (smart home).
+    """Async facade orchestrating Ubiant (account/buildings) + Hemis (smart home).
 
     Usage:
         async with FlexomClient(email=..., password=...) as client:
             zones = await client.get_zones()
     """
 
-    def __init__(self, email: str, password: str, *, building_index: int = 0):
+    def __init__(
+        self,
+        email: str,
+        password: str,
+        *,
+        building_index: int = 0,
+        session: aiohttp.ClientSession | None = None,
+    ):
+        """``session``: optional externally-owned aiohttp session (not closed on exit)."""
         self._email = email
         self._password = password
         self._building_index = building_index
+        self._external_session = session
         self._session: aiohttp.ClientSession | None = None
         self._ubiant: UbiantService | None = None
         self._hemis: HemisService | None = None
@@ -33,13 +53,12 @@ class FlexomClient:
         self._hemis_user: HemisUser | None = None
 
     async def __aenter__(self) -> FlexomClient:
-        self._session = aiohttp.ClientSession()
+        self._session = self._external_session or aiohttp.ClientSession()
         self._ubiant = UbiantService(self._session)
         try:
             await self._connect()
         except BaseException:
-            await self._session.close()
-            self._session = None
+            await self._close_session()
             raise
         return self
 
@@ -49,9 +68,14 @@ class FlexomClient:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        if self._session is not None:
+        await self._close_session()
+
+    async def _close_session(self) -> None:
+        if self._session is not None and self._external_session is None:
             await self._session.close()
-            self._session = None
+        self._session = None
+
+    # ------------------------------------------------------------ properties
 
     @property
     def building(self) -> Building | None:
@@ -62,12 +86,22 @@ class FlexomClient:
         return self._ubiant_user
 
     @property
+    def hemis_user(self) -> HemisUser | None:
+        return self._hemis_user
+
+    @property
+    def hemis_version(self) -> str | None:
+        return self._hemis_user.hemisVersion if self._hemis_user else None
+
+    @property
     def hemis_token(self) -> str | None:
         return self._hemis.token if self._hemis is not None else None
 
     async def ensure_auth(self) -> None:
         """Public accessor to refresh tokens before reconnecting STOMP etc."""
         await self._ensure_auth()
+
+    # ------------------------------------------------------------------ auth
 
     async def _connect(self) -> None:
         assert self._ubiant is not None and self._session is not None
@@ -106,22 +140,64 @@ class FlexomClient:
             kernel_id=self._building.kernel_slot,
         )
 
+    def _h(self) -> HemisService:
+        assert self._hemis is not None
+        return self._hemis
+
+    # ---------------------------------------------------------------- system
+
+    async def get_status(self) -> HemisStatus:
+        await self._ensure_auth()
+        return await self._h().get_status()
+
+    async def get_infos(self) -> HemisInfos:
+        await self._ensure_auth()
+        return await self._h().get_infos()
+
+    async def get_features(self) -> list[str]:
+        await self._ensure_auth()
+        return await self._h().get_features()
+
+    # ----------------------------------------------------------------- zones
+
     async def get_zones(self) -> list[Zone]:
         await self._ensure_auth()
-        assert self._hemis is not None
-        return await self._hemis.get_zones()
+        return await self._h().get_zones()
 
     async def get_zone_settings(self, zone_id: str) -> dict[str, Settings]:
         await self._ensure_auth()
-        assert self._hemis is not None
-        return await self._hemis.get_zone_settings(zone_id)
+        return await self._h().get_zone_settings(zone_id)
 
-    async def get_things(self) -> list[Thing]:
+    async def get_all_settings(
+        self, zone_id: str | None = None, factors: list[str] | None = None
+    ) -> dict[str, dict[str, Settings]]:
         await self._ensure_auth()
-        assert self._hemis is not None
-        return await self._hemis.get_things()
+        return await self._h().get_all_settings(zone_id, factors)
 
     async def set_zone_factor(self, zone_id: str, factor: str, value: float) -> None:
         await self._ensure_auth()
-        assert self._hemis is not None
-        await self._hemis.set_zone_factor(zone_id, factor, value)
+        await self._h().set_zone_factor(zone_id, factor, value)
+
+    # ---------------------------------------------------------------- things
+
+    async def get_things(self) -> list[Thing]:
+        await self._ensure_auth()
+        return await self._h().get_things()
+
+    async def get_sensors(
+        self, zone_id: str | None = None, factors: list[str] | None = None
+    ) -> list[Sensor]:
+        await self._ensure_auth()
+        return await self._h().get_sensors(zone_id, factors)
+
+    async def get_actuators(
+        self, zone_id: str | None = None, factors: list[str] | None = None
+    ) -> list[Actuator]:
+        await self._ensure_auth()
+        return await self._h().get_actuators(zone_id, factors)
+
+    async def set_actuator_state(
+        self, it_id: str, actuator_id: str, value: float, duration_ms: int | None = None
+    ) -> None:
+        await self._ensure_auth()
+        await self._h().set_actuator_state(it_id, actuator_id, value, duration_ms)

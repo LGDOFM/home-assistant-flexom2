@@ -1,12 +1,12 @@
 {
   "domain": "flexom2",
-  "name": "Flexom 2.0 (Ubiant)",
-  "version": "0.2.3",
-  "documentation": "https://github.com/arthur/home-assistant-flexom2",
-  "issue_tracker": "https://github.com/arthur/home-assistant-flexom2/issues",
-  "codeowners": ["@arthur"],
+  "name": "Flexom 2.0 / BuildingCare (Ubiant Hemis)",
+  "version": "0.3.0",
+  "documentation": "https://github.com/LGDOFM/home-assistant-flexom2",
+  "issue_tracker": "https://github.com/LGDOFM/home-assistant-flexom2/issues",
+  "codeowners": ["@LGDOFM"],
   "config_flow": true,
-  "iot_class": "cloud_polling",
+  "iot_class": "cloud_push",
   "integration_type": "hub",
   "requirements": []
 }

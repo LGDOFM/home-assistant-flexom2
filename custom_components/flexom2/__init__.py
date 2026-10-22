@@ -1,4 +1,4 @@
-"""Flexom 2.0 (Ubiant) integration for Home Assistant."""
+"""Flexom 2.0 (Ubiant / BuildingCare) integration for Home Assistant."""
 from __future__ import annotations
 
 import logging
@@ -12,7 +12,14 @@ from .coordinator import FlexomCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.LIGHT, Platform.COVER, Platform.CLIMATE]
+PLATFORMS: list[Platform] = [
+    Platform.LIGHT,
+    Platform.COVER,
+    Platform.CLIMATE,
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.EVENT,
+]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
