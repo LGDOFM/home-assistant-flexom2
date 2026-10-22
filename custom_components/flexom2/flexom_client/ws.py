@@ -71,6 +71,7 @@ class StompClient:
         self._heartbeat_task: asyncio.Task | None = None
         self._closed = asyncio.Event()
         self._connected = asyncio.Event()
+        self._heartbeat_interval_ms = 0
 
     async def connect(self) -> None:
         self._session = aiohttp.ClientSession()
@@ -125,6 +126,13 @@ class StompClient:
         _log.debug("STOMP >> %r", sub_frame)
         await self._ws.send_str(sub_frame)
         _log.info("STOMP subscribed to jms.topic.%s.data", self._building_id)
+
+        # Without client heart-beats the broker (ActiveMQ Artemis) drops the
+        # session after ~2 missed beats (~40 s), causing a reconnect storm.
+        if self._heartbeat_interval_ms > 0:
+            self._heartbeat_task = asyncio.create_task(
+                self._heartbeat_loop(), name="stomp-heartbeat"
+            )
 
     async def disconnect(self) -> None:
         self._closed.set()
@@ -200,6 +208,7 @@ class StompClient:
     ) -> None:
         if command == "CONNECTED":
             _log.info("STOMP connected (server headers=%s)", headers)
+            self._heartbeat_interval_ms = self._negotiate_heartbeat(headers.get("heart-beat"))
             self._connected.set()
         elif command == "MESSAGE":
             try:
@@ -213,3 +222,28 @@ class StompClient:
                 _log.exception("STOMP event handler failed: %s", e)
         elif command == "ERROR":
             _log.error("STOMP ERROR frame: headers=%s body=%s", headers, body[:300])
+
+    def _negotiate_heartbeat(self, server_header: str | None) -> int:
+        """STOMP 1.2: client sends every max(cx, sy) ms, 0 means no heart-beat."""
+        try:
+            _sx, sy = (int(x) for x in (server_header or "0,0").split(","))
+        except ValueError:
+            sy = 0
+        if sy <= 0:
+            return 0
+        return max(self.HEARTBEAT_MS, sy)
+
+    async def _heartbeat_loop(self) -> None:
+        # Send a bit early so the broker never sees a late beat.
+        interval = self._heartbeat_interval_ms / 1000 * 0.8
+        try:
+            while self._ws is not None and not self._ws.closed:
+                await asyncio.sleep(interval)
+                if self._ws is None or self._ws.closed:
+                    break
+                await self._ws.send_str(EOL)
+                _log.debug("STOMP >> heart-beat")
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:  # noqa: BLE001
+            _log.warning("STOMP heart-beat loop ended: %s", e)
