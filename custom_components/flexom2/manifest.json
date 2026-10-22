@@ -1,7 +1,7 @@
 {
   "domain": "flexom2",
   "name": "Flexom 2.0 / BuildingCare (Ubiant Hemis)",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "documentation": "https://github.com/LGDOFM/home-assistant-flexom2",
   "issue_tracker": "https://github.com/LGDOFM/home-assistant-flexom2/issues",
   "codeowners": ["@LGDOFM"],

@@ -34,8 +34,11 @@ REST au total (réglages de toutes les zones, tous les capteurs, infos système)
 
 Chaque appui sur un interrupteur physique :
 
-- met à jour l'entité `event.<interrupteur>` (types `button_0` à `button_4`), utilisable
-  directement comme déclencheur d'automatisation ;
+- met à jour l'entité `event.<interrupteur>`, utilisable directement comme déclencheur
+  d'automatisation. Le type d'événement est la **position** de la touche pressée :
+  `top` / `bottom` pour un interrupteur simple, `top_left` / `bottom_left` /
+  `top_right` / `bottom_right` pour un double, plus `released`. Selon le câblage,
+  « haut » peut allumer ou éteindre : c'est la position physique, pas la fonction ;
 - émet un événement `flexom2_switch_pressed` sur le bus HA avec `sensor_id`,
   `thing_id`, `name`, `zone`, `value`, `timestamp`.
 

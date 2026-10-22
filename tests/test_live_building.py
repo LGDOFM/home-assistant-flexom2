@@ -88,9 +88,10 @@ async def test_full_setup_and_push(hass: HomeAssistant, credentials: tuple[str, 
 
     ev = by_domain["event"][0]
     assert ev.state == "unknown"
-    assert ev.attributes["event_types"] == [
-        "button_0", "button_1", "button_2", "button_3", "button_4", "other",
-    ]
+    assert ev.attributes["event_types"] in (
+        ["top", "bottom", "released", "other"],
+        ["top_left", "bottom_left", "top_right", "bottom_right", "released", "other"],
+    )
     assert ev.name.endswith(" Interrupteur")
 
     climate = by_domain["climate"][0]
@@ -121,7 +122,7 @@ async def test_full_setup_and_push(hass: HomeAssistant, credentials: tuple[str, 
         "event", DOMAIN, f"{data.building_id}_sensor_{sws_id}"
     )
     ev_state = hass.states.get(ev_entity_id)
-    assert ev_state.attributes["event_type"] == "button_2"
+    assert ev_state.attributes["event_type"] in ("top", "top_right")
     assert len(bus_events) == 1
     assert bus_events[0].data["value"] == "2"
     assert bus_events[0].data["name"] == snap.thing.name

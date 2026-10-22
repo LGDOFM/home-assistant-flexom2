@@ -21,16 +21,24 @@
   },
   "entity": {
     "light": {
-      "zone_light": { "name": "Lumière" }
+      "zone_light": {
+        "name": "Lumière"
+      }
     },
     "cover": {
-      "zone_cover": { "name": "Volet" }
+      "zone_cover": {
+        "name": "Volet"
+      }
     },
     "climate": {
-      "zone_climate": { "name": "Chauffage" }
+      "zone_climate": {
+        "name": "Chauffage"
+      }
     },
     "binary_sensor": {
-      "smoke": { "name": "Fumée" }
+      "smoke": {
+        "name": "Fumée"
+      }
     },
     "event": {
       "switch": {
@@ -38,40 +46,86 @@
         "state_attributes": {
           "event_type": {
             "state": {
-              "button_0": "Relâché",
-              "button_1": "Bouton 1",
-              "button_2": "Bouton 2",
-              "button_3": "Bouton 3",
-              "button_4": "Bouton 4",
-              "other": "Autre"
+              "top": "Top",
+              "bottom": "Bottom",
+              "top_left": "Top left",
+              "bottom_left": "Bottom left",
+              "top_right": "Top right",
+              "bottom_right": "Bottom right",
+              "released": "Released",
+              "other": "Other"
             }
           }
         }
       }
     },
     "sensor": {
-      "temperature": { "name": "Température" },
-      "temperature_channel": { "name": "Température {channel}" },
-      "humidity": { "name": "Humidité" },
-      "humidity_channel": { "name": "Humidité {channel}" },
-      "electricity_index": { "name": "Index électrique" },
-      "electricity_index_channel": { "name": "Index électrique {channel}" },
-      "heating_index": { "name": "Index chauffage" },
-      "heating_index_channel": { "name": "Index chauffage {channel}" },
-      "hot_water_index": { "name": "Index eau chaude" },
-      "hot_water_index_channel": { "name": "Index eau chaude {channel}" },
-      "apparent_power": { "name": "Puissance apparente" },
-      "apparent_power_channel": { "name": "Puissance apparente {channel}" },
-      "battery_level": { "name": "Batterie" },
-      "battery_level_channel": { "name": "Batterie {channel}" },
-      "air_quality": { "name": "Qualité de l'air" },
-      "air_quality_channel": { "name": "Qualité de l'air {channel}" },
-      "hygrothermal_comfort": { "name": "Confort hygrothermique" },
-      "hygrothermal_comfort_channel": { "name": "Confort hygrothermique {channel}" },
-      "remaining_lifetime": { "name": "Durée de vie restante" },
-      "remaining_lifetime_channel": { "name": "Durée de vie restante {channel}" },
-      "time_since_maintenance": { "name": "Temps depuis maintenance" },
-      "time_since_maintenance_channel": { "name": "Temps depuis maintenance {channel}" }
+      "temperature": {
+        "name": "Température"
+      },
+      "temperature_channel": {
+        "name": "Température {channel}"
+      },
+      "humidity": {
+        "name": "Humidité"
+      },
+      "humidity_channel": {
+        "name": "Humidité {channel}"
+      },
+      "electricity_index": {
+        "name": "Index électrique"
+      },
+      "electricity_index_channel": {
+        "name": "Index électrique {channel}"
+      },
+      "heating_index": {
+        "name": "Index chauffage"
+      },
+      "heating_index_channel": {
+        "name": "Index chauffage {channel}"
+      },
+      "hot_water_index": {
+        "name": "Index eau chaude"
+      },
+      "hot_water_index_channel": {
+        "name": "Index eau chaude {channel}"
+      },
+      "apparent_power": {
+        "name": "Puissance apparente"
+      },
+      "apparent_power_channel": {
+        "name": "Puissance apparente {channel}"
+      },
+      "battery_level": {
+        "name": "Batterie"
+      },
+      "battery_level_channel": {
+        "name": "Batterie {channel}"
+      },
+      "air_quality": {
+        "name": "Qualité de l'air"
+      },
+      "air_quality_channel": {
+        "name": "Qualité de l'air {channel}"
+      },
+      "hygrothermal_comfort": {
+        "name": "Confort hygrothermique"
+      },
+      "hygrothermal_comfort_channel": {
+        "name": "Confort hygrothermique {channel}"
+      },
+      "remaining_lifetime": {
+        "name": "Durée de vie restante"
+      },
+      "remaining_lifetime_channel": {
+        "name": "Durée de vie restante {channel}"
+      },
+      "time_since_maintenance": {
+        "name": "Temps depuis maintenance"
+      },
+      "time_since_maintenance_channel": {
+        "name": "Temps depuis maintenance {channel}"
+      }
     }
   }
 }
